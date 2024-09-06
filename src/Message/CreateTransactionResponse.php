@@ -18,12 +18,13 @@ class CreateTransactionResponse extends AbstractResponse implements RedirectResp
     
     /***/
     public function getRedirectUrl(){
-        $priceId = $this->data['data']['items'][0]['price']['id'];
-        $productId = $this->data['data']['items'][0]['price']['product_id'];
         $transactionId = $this->data['data']['id'];
-        $returnUrl = urldecode($this->data['returnUrl'] ."?transactionId=$transactionId");
-        $fullUrl = $this->data['checkoutUrl']."?transactionId=$transactionId&returnUrl=$returnUrl";
-
+        $returnUrl = urldecode($this->data['returnUrl']);
+        $queryString = parse_url($returnUrl, PHP_URL_QUERY) ?? '';  // Get the query string from the URL
+        parse_str($queryString, $queryParams);  // Parse the query string into an array
+        $queryParams['transactionId'] = $transactionId;  // Add the transactionId to the array
+        $fullUrl = $this->data['checkoutUrl'] . '?transactionId=' . $transactionId . '&returnUrl=' . urlencode($returnUrl . '?' . http_build_query($queryParams));
+        
         return $fullUrl;
     }
 
