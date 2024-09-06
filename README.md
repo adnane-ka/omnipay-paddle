@@ -27,8 +27,8 @@ repository.
 ## Flow
 
 1. Configure gateway
-2. Create a new price for the given product
-3. Display an overlay checkout form
+2. Create a draft transaction
+3. Display an overlay checkout form for the draft transaction
 4. Proccess Payment by gateway
 5. Redirect to proccess payment on website
 
@@ -38,22 +38,22 @@ repository.
 ```php
 use Omnipay\Omnipay;
 
-$gateway = Omnipay::create('paddle');
+$gateway = Omnipay::create('Paddle');
 $gateway->setApiKey('YOUR_API_KEY');
-$gateway->setProductId('YOUR_PRODUCT_ID');
+$gateway->setTestMode(true);
 ```
 
 ### Creating a Purchase
 ```php
 $response = $gateway->purchase([
-    'amount' => 100000, // the amount in VND
-    'checkoutUrl' => 'http://localhost:8000/checkout.php', // the page where the overlay checkout is displayed
-    'returnUrl' => 'http://localhost:8000/complete.php', // the URL to return to after the operation is fully proccessed
-    'transactionId' => uniqid() // A unique identifier for the operation
+    'amount' => 5.00 * 100, // in cents
+    'checkoutUrl' => 'http://localhost:8000/checkout.php', // where you'll display the overlay / inline checkout
+    'returnUrl' => 'http://localhost:8000/complete.php',  // where you'll be proccessing the payment 
+    'currency' => 'USD'
 ])->send();
 
 if ($response->isRedirect()) {
-    // The price is created and you're ready to be redirected to checkout
+    // The transaction is created as a draft and you're ready to be redirected to checkout
     $response->redirect(); 
 } else {
     // An error occured
@@ -63,24 +63,45 @@ if ($response->isRedirect()) {
 
 ### Checkout
 ```html
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paddle Checkout</title>
+</head>
+<body>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script type="text/javascript">
+    Paddle.Environment.set("sandbox");
+    Paddle.Initialize({ 
+      token: "test_4c116d8b4cc5cd9756de9765db9", // Your public API key 
+    });
+    Paddle.Checkout.open({
+      transactionId: "<?php echo $_GET['transactionId']; ?>", // Locate this from request 
+      settings: {
+        successUrl: "<?php echo urldecode($_GET['returnUrl']); ?>" // Locate this from request
+      }
+    });
+</script>
+</body>
+</html>
 ```
 
 ### Completing Purchase
 When users submit the checkout form after they pay using the overlay checkout, they'll be redirected to `returnUrl` where you'll be proccessing the payment:
 ```php
 $response = $gateway->completePurchase([
-    'transactionId' => 'FGJAKANMCHK', // This should be retrieved from request redirect
-    'amount' => 100000 // Locate this from your system 
+    'transactionId' => $_GET['transactionId'] // sent in request or retrieved from backend
 ])->send();
 
 if($response->isSuccessful()){
     // Payment was successful and charge was captured
     // $response->getData()
-    // $response->getTransactionReference() // payment reference
+    echo $response->getTransactionReference(); // payment reference
 }else{
     // Charge was not captured and payment failed
-    // $response->getData()
+    echo $response->getMessage();
 }
 ```
 ## Support

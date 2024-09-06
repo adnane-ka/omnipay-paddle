@@ -1,2 +1,5 @@
 /vendor/
 composer.lock
+checkout.php
+complete.php
+index.php
