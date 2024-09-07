@@ -17,7 +17,7 @@ composer require adnane-ka/omnipay-paddle
 ## Basic Usage
 The following gateways are provided by this package:
 
-* paddle
+* Paddle
 
 This package ineteracts with [paddle's API](https://paddle.vn/lap-trinh-cong-thanh-toan.html). 
 
